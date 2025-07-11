@@ -47,11 +47,11 @@ public class TemporalChatClientBuilder extends DefaultChatClientBuilder {
                                     .setSummary(tool.description()).build()
                             );
                 });
-                toolObject = Workflow.updateActivityStub(
-                        toolObject,
-                        ActivityOptions.newBuilder().build(),
-                        activityOptionsMap
-                );
+//                toolObject = Workflow.updateActivityStub(
+//                        toolObject,
+//                        ActivityOptions.newBuilder().build(),
+//                        activityOptionsMap
+//                );
                 ToolCallback[] activityToolCallbacks = ActivityToolUtil.fromActivityStub(toolObject);
                 toolCallbacks.addAll(List.of(activityToolCallbacks));
             } else if (TemporalWorkflowReflectionUtil.isLocalActivityStub(toolObject)) {
@@ -64,11 +64,11 @@ public class TemporalChatClientBuilder extends DefaultChatClientBuilder {
                                     .setSummary(tool.description()).build()
                     );
                 });
-                toolObject = Workflow.updateLocalActivityStub(
-                        toolObject,
-                        LocalActivityOptions.newBuilder().build(),
-                        activityOptionsMap
-                );
+//                toolObject = Workflow.updateLocalActivityStub(
+//                        toolObject,
+//                        LocalActivityOptions.newBuilder().build(),
+//                        activityOptionsMap
+//                );
                 ToolCallback[] activityToolCallbacks = ActivityToolUtil.fromActivityStub(toolObject);
                 toolCallbacks.addAll(List.of(activityToolCallbacks));
             } else if (TemporalWorkflowReflectionUtil.isChildWorkflowStub(toolObject)) {
