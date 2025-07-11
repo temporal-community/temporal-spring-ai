@@ -25,6 +25,9 @@ This project contains both the Temporal + Spring AI integration and a sample app
 
 ### Running the Example
 
+To see the Workflow code go [here](src/main/java/io/temporal/ai/workflows/ChatWorkflowImpl.java)
+
+
 Set the following environment variables:
 * `TEMPORAL_API_KEY` - Your Temporal cloud API key
 * `OPENAI_API_KEY` - Your Open AI API key
