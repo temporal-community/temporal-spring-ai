@@ -1,0 +1,35 @@
+spring:
+    main:
+      web-application-type: none
+    application:
+        name: temporal-spring-ai-chat
+#    data:
+#      redis:
+#        host: localhost
+#        password: "mypassword"
+#        username: "default"
+    ai:
+      openai:
+        api-key: ${OPENAI_API_KEY}
+        chat:
+          options:
+            model: gpt-4o
+            temperature: 0.7
+#      vectorstore:
+#        redis:
+#          initialize-schema: true
+    temporal:
+      namespace: ${TEMPORAL_NAMESPACE}
+      connection:
+        target: ${TEMPORAL_ADDRESS}
+        api-key: ${TEMPORAL_API_KEY}
+      workflow-cache:
+        using-virtual-workflow-threads: true
+      workers:
+        - task-queue: temporal-spring-ai-chat-taskqueue
+          workflow-classes:
+            - io.temporal.ai.workflows.ChatWorkflowImpl
+          activity-beans:
+            - chatModelActivityImpl
+            - dateTimeToolsImpl
+#            - vectorStoreActivityImpl
