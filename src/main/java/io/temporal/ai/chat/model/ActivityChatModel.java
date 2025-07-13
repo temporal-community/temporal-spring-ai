@@ -1,5 +1,6 @@
 package io.temporal.ai.chat.model;
 
+import com.google.protobuf.ByteString;
 import org.springframework.ai.chat.messages.*;
 import org.springframework.ai.chat.metadata.ChatResponseMetadata;
 import org.springframework.ai.chat.model.ChatModel;
@@ -10,11 +11,15 @@ import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.content.Media;
 import org.springframework.ai.model.tool.*;
 import org.springframework.ai.tool.definition.ToolDefinition;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
@@ -80,10 +85,24 @@ public class ActivityChatModel implements ChatModel {
             if (message.role() == ChatModelTypes.Message.Role.USER || message.role() == ChatModelTypes.Message.Role.SYSTEM) {
                 if (message.rawContent() instanceof String textContent) {
                     // If the content is a String, we can directly use it as the message text.
-                    return new UserMessage(textContent);
-                }
-                else if (message.rawContent() instanceof ChatModelTypes.MediaContent mediaContent) {
-                    throw new UnsupportedOperationException("Media content is not supported in this implementation");
+                    UserMessage.Builder userMessageBuilder = UserMessage.builder().text(textContent);
+                    if (message.mediaContents() != null) {
+                        List<Media> media = message.mediaContents().stream().map(mediaContent -> {
+                            if (mediaContent.uri() != null) {
+                                try {
+                                    return new Media(MimeType.valueOf(mediaContent.mimeType()), new URI(mediaContent.uri()));
+                                } catch (URISyntaxException e) {
+                                    throw new RuntimeException(e);
+                                }
+                            } else if (mediaContent.data() != null) {
+                                return new Media(MimeType.valueOf(mediaContent.mimeType()), new ByteArrayResource(mediaContent.data()));
+                            } else {
+                                throw new IllegalArgumentException("Unsupported media content data type: " + mediaContent.data().getClass().getSimpleName());
+                            }
+                        }).toList();
+                        userMessageBuilder.media(media);
+                    }
+                    return userMessageBuilder.build();
                 } else {
                     throw new IllegalArgumentException("Unsupported raw content type: " + message.rawContent().getClass().getSimpleName());
                 }
@@ -137,11 +156,10 @@ public class ActivityChatModel implements ChatModel {
                 Object content = message.getText();
                 if (message instanceof UserMessage userMessage) {
                     if (!CollectionUtils.isEmpty(userMessage.getMedia())) {
-                        List<ChatModelTypes.MediaContent> contentList = new ArrayList<>(List.of(new ChatModelTypes.MediaContent(message.getText())));
+                        List<ChatModelTypes.MediaContent> contentList = new ArrayList<>();
 
                         contentList.addAll(userMessage.getMedia().stream().map(this::mapToMediaContent).toList());
-
-                        content = contentList;
+                        return List.of(new ChatModelTypes.Message(content, contentList, ChatModelTypes.Message.Role.valueOf(message.getMessageType().name())));
                     }
                 }
 
@@ -160,7 +178,7 @@ public class ActivityChatModel implements ChatModel {
                 return toolMessage.getResponses()
                         .stream()
                         .map(tr -> new ChatModelTypes.Message(tr.responseData(), ChatModelTypes.Message.Role.TOOL, tr.name(),
-                                tr.id(), null, null, null, null))
+                                tr.id(), null, null, null, null, null))
                         .toList();
             }
             else {
@@ -221,22 +239,16 @@ public class ActivityChatModel implements ChatModel {
             audioOutput = new ChatModelTypes.Message.AudioOutput(assistantMessage.getMedia().get(0).getId(), null, null, null);
         }
         return new ChatModelTypes.Message(assistantMessage.getText(),
-                ChatModelTypes.Message.Role.ASSISTANT, null, null, toolCalls, null, audioOutput, null);
+                ChatModelTypes.Message.Role.ASSISTANT, null, null, toolCalls, null, audioOutput, null, null);
     }
 
     private ChatModelTypes.MediaContent mapToMediaContent(Media media) {
-        var mimeType = media.getMimeType();
-        if (MimeTypeUtils.parseMimeType("audio/mp3").equals(mimeType)) {
-            return new ChatModelTypes.MediaContent(
-                    new ChatModelTypes.MediaContent.InputAudio(fromAudioData(media.getData()), ChatModelTypes.MediaContent.InputAudio.Format.MP3));
-        }
-        if (MimeTypeUtils.parseMimeType("audio/wav").equals(mimeType)) {
-            return new ChatModelTypes.MediaContent(
-                    new ChatModelTypes.MediaContent.InputAudio(fromAudioData(media.getData()), ChatModelTypes.MediaContent.InputAudio.Format.WAV));
-        }
-        else {
-            return new ChatModelTypes.MediaContent(
-                    new ChatModelTypes.MediaContent.ImageUrl(this.fromMediaData(media.getMimeType(), media.getData())));
+        if (media.getData() instanceof String uri) {
+            return new ChatModelTypes.MediaContent(media.getMimeType().toString(), uri);
+        } else if (media.getData() instanceof byte[] data) {
+            return new ChatModelTypes.MediaContent(media.getMimeType().toString(), data);
+        } else {
+            throw new IllegalArgumentException("Unsupported media content data type: " + media.getData().getClass().getSimpleName());
         }
     }
 

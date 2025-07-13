@@ -68,4 +68,5 @@ Note: The Temporal CLI will need the appropriate connection settings to connect 
 * Add support for automatic summary population
 * Clean up conditional registration
 * Support versioned removal of tools
+* Improve support for media
 * Separate out into library, auto-starter, and sample application

@@ -23,7 +23,12 @@ import org.springframework.ai.mcp.SyncMcpToolCallback;
 import org.springframework.ai.mcp.SyncMcpToolCallbackProvider;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.tool.ToolCallback;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.util.MimeTypeUtils;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.time.Duration;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -82,6 +87,11 @@ public class ChatWorkflowImpl implements ChatWorkflow {
                 .map(t -> new McpToolCallback(mcpClient, t))
                 .map(mcpTc -> (ToolCallback) mcpTc)
                 .toList();
-        return chatClient.prompt(input).toolCallbacks(tc).call().content();
+        return chatClient
+                .prompt()
+                .user(input)
+                .toolCallbacks(tc)
+                .call()
+                .content();
     }
 }
