@@ -56,13 +56,16 @@ Note: The Temporal CLI will need the appropriate connection settings to connect 
 
 * Add documentation
 * Add tests
+* Figure out the error conversion story
+* Figure out activity options story
+* Allow passing specific models options from the workflow to activity
 * Test with different AI models
 * Add support for tool context
 * Add support for observation
-* Support tool wrapping in the prompt
 * Add support for child workflows
-* Add support for MCP
+* Improve support for MCP
 * Clean up the serialization code and logic
 * Add support for automatic summary population
 * Clean up conditional registration
+* Support versioned removal of tools
 * Separate out into library, auto-starter, and sample application

@@ -3,7 +3,7 @@ package io.temporal.ai.chat.model;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.definition.ToolDefinition;
 
-public class RemoteToolCallback implements ToolCallback {
+class RemoteToolCallback implements ToolCallback {
     private final ToolDefinition toolDefinition;
 
     public RemoteToolCallback(ToolDefinition toolDefinition) {

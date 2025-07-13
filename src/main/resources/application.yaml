@@ -9,6 +9,18 @@ spring:
 #        password: "mypassword"
 #        username: "default"
     ai:
+      # This is just to test multiple AI models
+      anthropic:
+        api-key: "sadsa"
+      mcp:
+        client:
+          enabled: true
+          name: my-mcp-client
+          version: 1.0.0
+          root-change-notification: true
+          type: SYNC
+          stdio:
+            servers-configuration: classpath:mcp-servers.json
       openai:
         api-key: ${OPENAI_API_KEY}
         chat:
@@ -30,6 +42,7 @@ spring:
           workflow-classes:
             - io.temporal.ai.workflows.ChatWorkflowImpl
           activity-beans:
-            - chatModelActivityImpl
+            - openAiChatModelActivity
             - dateTimeToolsImpl
-#            - vectorStoreActivityImpl
+            - mcpClientActivityImpl
+#            - vectorStoreActivity

@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Component
+// TODO: Make this conditional on the presence of a ChatModel bean
 public class ChatModelActivityImpl implements ChatModelActivity {
     ChatModel chatModel;
 

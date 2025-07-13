@@ -21,12 +21,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * ActivityChatModel is a chat model implementation that uses a Temporal activity to call a chat model.
+ * It supports tool calling and tool execution eligibility checks.
+ */
 public class ActivityChatModel implements ChatModel {
     private final ChatModelActivity chatModelActivity;
     private final ToolCallingManager toolCallingManager = ToolCallingManager.builder().build();
     private final ToolExecutionEligibilityPredicate toolExecutionEligibilityPredicate = new DefaultToolExecutionEligibilityPredicate();
 
 
+    /**
+     * Constructor for ActivityChatModel.
+     *
+     * @param chatModelActivity The Temporal activity that implements the chat model.
+     */
     public ActivityChatModel(ChatModelActivity chatModelActivity) {
         this.chatModelActivity = chatModelActivity;
     }

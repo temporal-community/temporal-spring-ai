@@ -7,8 +7,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.stream.Collectors;
 
-@Component
-@ConditionalOnBean(VectorStore.class)
 public class VectorStoreActivityImpl implements VectorStoreActivity {
     VectorStore vectorStore;
 
