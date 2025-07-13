@@ -30,10 +30,9 @@ dependencies {
     implementation 'org.springframework.ai:spring-ai-openai'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.ai:spring-ai-mcp:1.0.0'
-    implementation 'org.springframework.ai:spring-ai-starter-model-anthropic:1.0.0'
     implementation 'org.springframework.ai:spring-ai-starter-mcp-client:1.0.0'
-    //    implementation 'org.springframework.ai:spring-ai-rag:1.0.0'
-    //    implementation 'org.springframework.ai:spring-ai-starter-vector-store-redis'
+    implementation 'org.springframework.ai:spring-ai-rag:1.0.0'
+    implementation 'org.springframework.ai:spring-ai-starter-vector-store-redis'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 

@@ -1,48 +1,58 @@
 spring:
-    main:
-      web-application-type: none
-    application:
-        name: temporal-spring-ai-chat
-#    data:
-#      redis:
-#        host: localhost
-#        password: "mypassword"
-#        username: "default"
-    ai:
-      # This is just to test multiple AI models
-      anthropic:
-        api-key: "sadsa"
-      mcp:
-        client:
-          enabled: true
-          name: my-mcp-client
-          version: 1.0.0
-          root-change-notification: true
-          type: SYNC
-          stdio:
-            servers-configuration: classpath:mcp-servers.json
-      openai:
-        api-key: ${OPENAI_API_KEY}
-        chat:
-          options:
-            model: gpt-4o
-            temperature: 0.7
-#      vectorstore:
-#        redis:
-#          initialize-schema: true
-    temporal:
-      namespace: ${TEMPORAL_NAMESPACE}
-      connection:
-        target: ${TEMPORAL_ADDRESS}
-        api-key: ${TEMPORAL_API_KEY}
-      workflow-cache:
-        using-virtual-workflow-threads: true
-      workers:
-        - task-queue: temporal-spring-ai-chat-taskqueue
-          workflow-classes:
-            - io.temporal.ai.workflows.ChatWorkflowImpl
-          activity-beans:
-            - openAiChatModelActivity
-            - dateTimeToolsImpl
-            - mcpClientActivityImpl
-#            - vectorStoreActivity
+  # Disable the default auto-configuration for Redis since we are including the auto-configuration for Redis Vector Store.
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+  main:
+    web-application-type: none
+  application:
+      name: temporal-spring-ai-chat
+  ai:
+    mcp:
+      client:
+        name: my-mcp-client
+        stdio:
+          servers-configuration: classpath:mcp-servers.json
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      chat:
+        options:
+          model: gpt-4o
+          temperature: 0.7
+  temporal:
+    namespace: ${TEMPORAL_NAMESPACE}
+    connection:
+      target: ${TEMPORAL_ADDRESS}
+      api-key: ${TEMPORAL_API_KEY}
+    workflow-cache:
+      using-virtual-workflow-threads: true
+    workers:
+      - task-queue: temporal-spring-ai-chat-taskqueue
+        workflow-classes:
+          - io.temporal.ai.workflows.ChatWorkflowImpl
+        activity-beans:
+          - openAiChatModelActivity
+          - dateTimeToolsImpl
+          - mcpClientActivityImpl
+---
+spring:
+  autoconfigure:
+    exclude:
+  config:
+    activate:
+      on-profile: vectorstore-redis
+  data:
+    redis:
+      host: localhost
+      password: "mypassword"
+      username: "default"
+  ai:
+    vectorstore:
+      redis:
+        initialize-schema: true
+  temporal:
+    workers:
+      - task-queue: temporal-spring-ai-chat-taskqueue
+        activity-beans:
+          - openAiChatModelActivity
+          - dateTimeToolsImpl
+          - vectorStoreActivity
