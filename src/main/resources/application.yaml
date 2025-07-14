@@ -7,11 +7,11 @@ spring:
   application:
       name: temporal-spring-ai-chat
   ai:
-    mcp:
-      client:
-        name: my-mcp-client
-        stdio:
-          servers-configuration: classpath:mcp-servers.json
+#    mcp:
+#      client:
+#        name: my-mcp-client
+#        stdio:
+#          servers-configuration: classpath:mcp-servers.json
     openai:
       api-key: ${OPENAI_API_KEY}
       chat:
@@ -30,9 +30,9 @@ spring:
         workflow-classes:
           - io.temporal.ai.workflows.ChatWorkflowImpl
         activity-beans:
-          - openAiChatModelActivity
+          - chatModelActivity
           - dateTimeToolsImpl
-          - mcpClientActivityImpl
+#          - mcpClientActivityImpl
 ---
 spring:
   autoconfigure:
@@ -53,6 +53,6 @@ spring:
     workers:
       - task-queue: temporal-spring-ai-chat-taskqueue
         activity-beans:
-          - openAiChatModelActivity
+          - chatModelActivity
           - dateTimeToolsImpl
           - vectorStoreActivity

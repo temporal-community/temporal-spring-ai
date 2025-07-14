@@ -10,6 +10,15 @@ import org.springframework.stereotype.Component;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * ChatModelActivityBeanRegistrar is a Spring component that registers
+ * ChatModelActivityImpl beans for each ChatModel bean found in the application context.
+ * <p>
+ * If there is only one ChatModel bean or if the ChatModel bean is marked as primary,
+ * it also registers an alias for the activity bean named "chatModelActivity".
+ * This allows for easy access to the activity bean without needing to specify the
+ * specific ChatModel bean name.
+ */
 @Component
 public class ChatModelActivityBeanRegistrar implements BeanDefinitionRegistryPostProcessor {
 

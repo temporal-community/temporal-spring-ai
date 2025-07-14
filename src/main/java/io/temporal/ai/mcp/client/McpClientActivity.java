@@ -5,13 +5,19 @@ import io.modelcontextprotocol.spec.McpSchema;
 import io.temporal.activity.ActivityInterface;
 import io.temporal.activity.ActivityMethod;
 
-@ActivityInterface
+import java.util.List;
+import java.util.Map;
+
+/**
+ * McpClientActivity defines the activities for interacting with a set of MCP clients on the worker.
+ */
+@ActivityInterface(namePrefix = "MCP-Client-")
 public interface McpClientActivity {
-    McpSchema.ServerCapabilities getServerCapabilities();
+    Map<String, McpSchema.ServerCapabilities> getServerCapabilities();
 
-    McpSchema.Implementation getClientInfo();
+    Map<String, McpSchema.Implementation> getClientInfo();
 
-    McpSchema.CallToolResult callTool(McpSchema.CallToolRequest callToolRequest);
+    McpSchema.CallToolResult callTool(String clientName, McpSchema.CallToolRequest callToolRequest);
 
-    McpSchema.ListToolsResult listTools();
+    Map<String,McpSchema.ListToolsResult> listTools();
 }

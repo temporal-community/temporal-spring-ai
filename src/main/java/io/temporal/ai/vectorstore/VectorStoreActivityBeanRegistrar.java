@@ -9,6 +9,15 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
+/**
+ * VectorStoreActivityBeanRegistrar is a Spring component that registers
+ * VectorStoreActivityImpl beans for each VectorStore bean found in the application context.
+ * <p>
+ * If there is only one VectorStore bean or if the VectorStore bean is marked as primary,
+ * it also registers an alias for the activity bean named "vectorStoreActivity".
+ * This allows for easy access to the activity bean without needing to specify the
+ * specific VectorStore bean name.
+ */
 @Component
 public class VectorStoreActivityBeanRegistrar implements BeanDefinitionRegistryPostProcessor {
 

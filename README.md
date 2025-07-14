@@ -69,4 +69,5 @@ Note: The Temporal CLI will need the appropriate connection settings to connect 
 * Clean up conditional registration
 * Support versioned removal of tools
 * Improve support for media
+* Add specific Temporal chat model options
 * Separate out into library, auto-starter, and sample application
