@@ -2,10 +2,20 @@
 
 This repository contains an experimental Temporal + [Spring AI](https://spring.io/projects/spring-ai) integration. 
 
+## What is Spring AI
+
+Spring AI is an application framework for AI engineering. Its goal is to apply to the AI domain Spring ecosystem design principles such as portability and modular design and promote using POJOs as the building blocks of an application to the AI domain.
+
+## Features
+
 Current Features are:
 * Easily call AI models from withing a Temporal Workflow.
 * First class integration with the Chat client model and conversation history.
 * Automatically converting activities, local activities, nexus operations and child workflows (TBD) into tools.
+* MCP integration
+* Support for autowiring AI models, MCP clients, and vector store clients directly into activities
+* Multiple model support
+* Native Multi media support
 * Support vector stores and vector search for RAG and context fetching.
 
 ## Note
