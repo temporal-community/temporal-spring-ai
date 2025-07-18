@@ -9,7 +9,6 @@ import org.springframework.ai.retry.NonTransientAiException;
 import java.util.List;
 import java.util.stream.Collectors;
 
-// TODO: Make this conditional on the presence of a ChatModel bean
 public class ChatModelActivityImpl implements ChatModelActivity {
     ChatModel chatModel;
 
