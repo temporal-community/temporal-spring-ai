@@ -1,6 +1,5 @@
 package io.temporal.ai.chat.model;
 
-import com.google.protobuf.ByteString;
 import org.springframework.ai.chat.messages.*;
 import org.springframework.ai.chat.metadata.ChatResponseMetadata;
 import org.springframework.ai.chat.model.ChatModel;
@@ -12,16 +11,12 @@ import org.springframework.ai.content.Media;
 import org.springframework.ai.model.tool.*;
 import org.springframework.ai.tool.definition.ToolDefinition;
 import org.springframework.core.io.ByteArrayResource;
-import org.springframework.core.io.Resource;
-import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.MimeType;
-import org.springframework.util.MimeTypeUtils;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -79,6 +74,20 @@ public class ActivityChatModel implements ChatModel {
         return response;
     }
 
+    public static Media toMedia(ChatModelTypes.MediaContent mediaContent)  {
+        if (mediaContent.uri() != null) {
+            try {
+                return new Media(MimeType.valueOf(mediaContent.mimeType()), new URI(mediaContent.uri()));
+            } catch (URISyntaxException e) {
+                throw new RuntimeException(e);
+            }
+        } else if (mediaContent.data() != null) {
+            return new Media(MimeType.valueOf(mediaContent.mimeType()), new ByteArrayResource(mediaContent.data()));
+        } else {
+            throw new IllegalArgumentException("Unsupported media content data type: " + mediaContent.data().getClass().getSimpleName());
+        }
+    }
+
 
     public static Prompt createPrompt(ChatModelTypes.ChatModelActivityInput input) {
         List<org.springframework.ai.chat.messages.Message> messages = input.messages().stream().map(message -> {
@@ -87,19 +96,7 @@ public class ActivityChatModel implements ChatModel {
                     // If the content is a String, we can directly use it as the message text.
                     UserMessage.Builder userMessageBuilder = UserMessage.builder().text(textContent);
                     if (message.mediaContents() != null) {
-                        List<Media> media = message.mediaContents().stream().map(mediaContent -> {
-                            if (mediaContent.uri() != null) {
-                                try {
-                                    return new Media(MimeType.valueOf(mediaContent.mimeType()), new URI(mediaContent.uri()));
-                                } catch (URISyntaxException e) {
-                                    throw new RuntimeException(e);
-                                }
-                            } else if (mediaContent.data() != null) {
-                                return new Media(MimeType.valueOf(mediaContent.mimeType()), new ByteArrayResource(mediaContent.data()));
-                            } else {
-                                throw new IllegalArgumentException("Unsupported media content data type: " + mediaContent.data().getClass().getSimpleName());
-                            }
-                        }).toList();
+                        List<Media> media = message.mediaContents().stream().map(ActivityChatModel::toMedia).toList();
                         userMessageBuilder.media(media);
                     }
                     return userMessageBuilder.build();
@@ -156,9 +153,7 @@ public class ActivityChatModel implements ChatModel {
                 Object content = message.getText();
                 if (message instanceof UserMessage userMessage) {
                     if (!CollectionUtils.isEmpty(userMessage.getMedia())) {
-                        List<ChatModelTypes.MediaContent> contentList = new ArrayList<>();
-
-                        contentList.addAll(userMessage.getMedia().stream().map(this::mapToMediaContent).toList());
+                        List<ChatModelTypes.MediaContent> contentList = new ArrayList<>(userMessage.getMedia().stream().map(ActivityChatModel::mapToMediaContent).toList());
                         return List.of(new ChatModelTypes.Message(content, contentList, ChatModelTypes.Message.Role.valueOf(message.getMessageType().name())));
                     }
                 }
@@ -172,13 +167,10 @@ public class ActivityChatModel implements ChatModel {
             }
             else if (message.getMessageType() == MessageType.TOOL) {
                 ToolResponseMessage toolMessage = (ToolResponseMessage) message;
-
-                toolMessage.getResponses()
-                        .forEach(response -> Assert.isTrue(response.id() != null, "ToolResponseMessage must have an id"));
                 return toolMessage.getResponses()
                         .stream()
                         .map(tr -> new ChatModelTypes.Message(tr.responseData(), ChatModelTypes.Message.Role.TOOL, tr.name(),
-                                tr.id(), null, null, null, null, null))
+                                tr.id(), null, null))
                         .toList();
             }
             else {
@@ -186,7 +178,6 @@ public class ActivityChatModel implements ChatModel {
             }
         }).flatMap(List::stream).toList();
 
-        // OpenAiChatOptions requestOptions = (OpenAiChatOptions) prompt.getOptions();
         List<ChatModelTypes.FunctionTool> tools = List.of();
         // Add the tool definitions to the request's tools parameter.
         if (prompt.getOptions() instanceof ToolCallingChatOptions toolCallingChatOptions) {
@@ -196,9 +187,9 @@ public class ActivityChatModel implements ChatModel {
             }
         }
 
-        ChatModelTypes.ChatModelActivityInput.ModelOptions modelOptions = null;
+        ChatModelTypes.ModelOptions modelOptions = null;
         if (prompt.getOptions() != null) {
-             new ChatModelTypes.ChatModelActivityInput.ModelOptions(
+            modelOptions = new ChatModelTypes.ModelOptions(
                     prompt.getOptions().getModel(),
                     prompt.getOptions().getFrequencyPenalty(),
                     prompt.getOptions().getMaxTokens(),
@@ -220,7 +211,9 @@ public class ActivityChatModel implements ChatModel {
                 message.toolCalls() != null ?
                         message.toolCalls().stream().map(
                                 tc -> new AssistantMessage.ToolCall(tc.id(), tc.type(), tc.function().name(), tc.function().arguments())
-                        ).toList() : List.of());
+                        ).toList() : List.of(),
+                message.mediaContents() != null ?
+                message.mediaContents().stream().map(ActivityChatModel::toMedia).toList() : List.of());
 
     }
 
@@ -232,46 +225,18 @@ public class ActivityChatModel implements ChatModel {
                 return new ChatModelTypes.Message.ToolCall(toolCall.id(), toolCall.type(), function);
             }).toList();
         }
-        ChatModelTypes.Message.AudioOutput audioOutput = null;
-        if (!CollectionUtils.isEmpty(assistantMessage.getMedia())) {
-            Assert.isTrue(assistantMessage.getMedia().size() == 1,
-                    "Only one media content is supported for assistant messages");
-            audioOutput = new ChatModelTypes.Message.AudioOutput(assistantMessage.getMedia().get(0).getId(), null, null, null);
-        }
+        List<ChatModelTypes.MediaContent> contentList = new ArrayList<>(assistantMessage.getMedia().stream().map(ActivityChatModel::mapToMediaContent).toList());
         return new ChatModelTypes.Message(assistantMessage.getText(),
-                ChatModelTypes.Message.Role.ASSISTANT, null, null, toolCalls, null, audioOutput, null, null);
+                ChatModelTypes.Message.Role.ASSISTANT, null, null, toolCalls, contentList);
     }
 
-    private ChatModelTypes.MediaContent mapToMediaContent(Media media) {
+    private static ChatModelTypes.MediaContent mapToMediaContent(Media media) {
         if (media.getData() instanceof String uri) {
             return new ChatModelTypes.MediaContent(media.getMimeType().toString(), uri);
         } else if (media.getData() instanceof byte[] data) {
             return new ChatModelTypes.MediaContent(media.getMimeType().toString(), data);
         } else {
             throw new IllegalArgumentException("Unsupported media content data type: " + media.getData().getClass().getSimpleName());
-        }
-    }
-
-    private String fromAudioData(Object audioData) {
-        if (audioData instanceof byte[] bytes) {
-            return Base64.getEncoder().encodeToString(bytes);
-        }
-        throw new IllegalArgumentException("Unsupported audio data type: " + audioData.getClass().getSimpleName());
-    }
-
-    private String fromMediaData(MimeType mimeType, Object mediaContentData) {
-        if (mediaContentData instanceof byte[] bytes) {
-            // Assume the bytes are an image. So, convert the bytes to a base64 encoded
-            // following the prefix pattern.
-            return String.format("data:%s;base64,%s", mimeType.toString(), Base64.getEncoder().encodeToString(bytes));
-        }
-        else if (mediaContentData instanceof String text) {
-            // Assume the text is a URLs or a base64 encoded image prefixed by the user.
-            return text;
-        }
-        else {
-            throw new IllegalArgumentException(
-                    "Unsupported media data type: " + mediaContentData.getClass().getSimpleName());
         }
     }
 

@@ -21,19 +21,14 @@ import java.time.Duration;
  * ChatWorkflowImpl is a Temporal workflow implementation that uses the TemporalChatClient to interact with a chat model.
  */
 public class ChatWorkflowImpl implements ChatWorkflow {
-//    private final McpClientActivity mcpClientActivity = Workflow.newActivityStub(McpClientActivity.class,
-//            ActivityOptions.newBuilder()
-//                    .setStartToCloseTimeout(Duration.ofSeconds(10))
-//                    .setRetryOptions(RetryOptions.newBuilder()
-//                            .setMaximumAttempts(3)
-//                            .build())
-//                    .build());
-//    private final ActivityMcpClient mcpClient = new ActivityMcpClient(mcpClientActivity);
+    private boolean isChatEnded = false;
     private final ChatClient chatClient;
 
     @WorkflowInit
     public ChatWorkflowImpl(String prompt) {
+        // Create a chat memory to store the conversation history so the conversation can be preserved across `ask` calls.
         ChatMemory chatMemory = MessageWindowChatMemory.builder().build();
+        // Create an activity stub to be used as a tool to get the current date and time.
         DateTimeTools dateTimeTools = Workflow.newActivityStub(DateTimeTools.class,
                 ActivityOptions.newBuilder()
                         .setStartToCloseTimeout(Duration.ofSeconds(10))
@@ -41,6 +36,7 @@ public class ChatWorkflowImpl implements ChatWorkflow {
                                 .setMaximumAttempts(3)
                                 .build())
                         .build());
+        // Create an activity stub to be used to call the chat model.
         ChatModelActivity chatModelActivity = Workflow.newActivityStub(ChatModelActivity.class,
                 ActivityOptions.newBuilder()
                         .setStartToCloseTimeout(Duration.ofMinutes(1))
@@ -49,6 +45,7 @@ public class ChatWorkflowImpl implements ChatWorkflow {
                                 .build())
                         .build());
         ActivityChatModel activityChatModel = new ActivityChatModel(chatModelActivity);
+        // Build the TemporalChatClient with the chat model, tools, and chat memory advisor.
         this.chatClient = TemporalChatClient.builder(activityChatModel)
                 .defaultTools(dateTimeTools, new AlarmTool())
                 .defaultAdvisors(MessageChatMemoryAdvisor.builder(chatMemory).build())
@@ -58,8 +55,8 @@ public class ChatWorkflowImpl implements ChatWorkflow {
 
     @Override
     public String startChat(String prompt) {
-        // Just sleep a while so we can run some updates in the meantime
-        Workflow.sleep(Duration.ofMinutes(5));
+        // Wait for the conversation to finish and all handlers to complete
+        Workflow.await(() -> isChatEnded && Workflow.isEveryHandlerFinished());
         return chatClient.prompt("How did the conversation go?").call().content();
     }
 
@@ -70,5 +67,10 @@ public class ChatWorkflowImpl implements ChatWorkflow {
                 .user(input)
                 .call()
                 .content();
+    }
+
+    @Override
+    public void endChat() {
+        isChatEnded = true;
     }
 }

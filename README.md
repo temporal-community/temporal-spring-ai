@@ -20,9 +20,9 @@ Current Features are:
 
 ## Note
 
-This is an experimental project I mostly worked on during evening and weekends, it contains lots of TODOs and is not production ready. It is meant to be a proof of concept and a starting point for a conversation starter.
+This is an experimental project, it contains lots of TODOs and is not production ready. It is meant to be a proof of concept and a conversation starter to gauge interest.
 
-This project contains both the Temporal + Spring AI integration and a sample application that uses it to build a simple chat bot that can answer questions with a very small set of tools.
+This project contains both the Temporal + Spring AI integration and a sample application that uses it to build a simple chatbot that can answer questions with a very small set of tools.
 
 ## Getting Started
 
@@ -30,7 +30,7 @@ This project contains both the Temporal + Spring AI integration and a sample app
 
 * [Gradle](https://gradle.org/) 8.0+
 * Java 21+
-* Temporal cloud API key
+* Temporal Cloud API key
 * Open AI API key
 
 ### Running the Example
@@ -58,6 +58,12 @@ You can then interact with the chat bot by sending update requests to it:
 
 ```bash
  temporal workflow update execute --workflow-id PirateChat --name ask --input '"Can you set me an alarm to fire in two hours and tell me when"' --tls
+```
+
+To end the chat
+
+```bash
+ temporal workflow signal --workflow-id PirateChat --name endChat --tls
 ```
 
 Note: The Temporal CLI will need the appropriate connection settings to connect to your Temporal server.
